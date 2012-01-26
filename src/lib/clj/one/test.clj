@@ -2,7 +2,8 @@
   "Support for evaluating ClojureScript code from Clojure tests."
   (:refer-clojure :exclude [load-file])
   (:use [cljs.compiler :only (namespaces)]
-        [cljs.repl :only (evaluate-form load-file load-namespace)]))
+        [cljs.repl :only (evaluate-form load-file load-namespace)]
+        [cljs.repl.browser :only (repl-env)]))
 
 (def ^:dynamic *eval-env*)
 
@@ -80,4 +81,19 @@
      (ensure-ns-loaded *eval-env* (quote ~ns))
      ~@(map (fn [x] `(evaluate-cljs *eval-env* (quote ~ns) (quote ~x))) forms)))
 
+(defn within-browser-env
+  "Execute f with *eval-env* bound to an evalutation environment at
+  url (which defaults to http://localhost:8080/development)."
+  ([run-server f]
+     (within-browser-env run-server "http://localhost:8080/development" f))
+  ([run-server url f]
+     (let [server (run-server)
+           eval-env (repl-env)]
+       (-setup eval-env)
+       (browse-url url)
+       (binding [*eval-env* eval-env]
+         (f))
+       (-tear-down eval-env)
+       (.stop server))))
 
+(todo! within-rhino-env)

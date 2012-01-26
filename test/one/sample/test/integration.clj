@@ -6,23 +6,10 @@
         [clojure.java.browse :only (browse-url)]
         [cljs.repl :only (-setup -tear-down)]
         [cljs.repl.browser :only (repl-env)]
-        [one.test :only (*eval-env*)]
+        [one.test :only (setup)]
         [one.sample.dev-server :only (run-server)]))
 
-(defn setup
-  "Start the development server and connect to the browser so that
-  ClojureScript code can be evaluated from tests."
-  [f]
-  (let [server (run-server)
-        eval-env (repl-env)]
-    (-setup eval-env)
-    (browse-url "http://localhost:8080/development")
-    (binding [*eval-env* eval-env]
-      (f))
-    (-tear-down eval-env)
-    (.stop server)))
-
-(use-fixtures :once setup)
+(use-fixtures :once within-browser-env)
 
 (deftest test-enter-new-name
   (reset! *database* #{})
